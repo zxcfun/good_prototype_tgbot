@@ -1,0 +1,32 @@
+services:
+  # 1. База данных PostgreSQL
+  db:
+    image: postgres:15
+    container_name: tate_bot_db
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: ceb6c885-ace0-42e5-9600-c4e6eed2d3bc  # Придумай свой пароль!
+      POSTGRES_DB: tate_bateman_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data  # Сохраняем данные навсегда
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d tate_bateman_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  # 2. Твой Telegram-бот
+  bot:
+    build: .
+    container_name: tate_bot_app
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy  # Бот ждет, пока база полностью запустится
+    ports:
+      - "8000:8000"  # Открываем порт 8000, чтобы Nginx мог достучаться
+
+volumes:
+  postgres_data:  # Создаем защищенное хранилище для базы
